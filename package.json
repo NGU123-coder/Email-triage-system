@@ -1,0 +1,25 @@
+{
+  "name": "ai-email-triage-assistant",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace frontend",
+    "dev:backend": "npm run dev --workspace backend",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "dependencies": {
+    "csv-parser": "^3.2.1",
+    "csv-writer": "^1.6.0",
+    "dotenv": "^17.4.2",
+    "groq-sdk": "^1.2.0",
+    "openai": "^6.37.0"
+  },
+  "devDependencies": {
+    "@types/mailparser": "^3.4.6",
+    "@types/node": "^25.7.0",
+    "ts-node": "^10.9.2"
+  }
+}

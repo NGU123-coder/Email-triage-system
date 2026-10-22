@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Email {
+  id               String           @id @default(cuid())
+  from             String
+  to               String
+  cc               String?
+  subject          String
+  date             DateTime
+  body             String
+  processingStatus ProcessingStatus @default(PENDING)
+  processingError  String?
+  createdAt        DateTime         @default(now())
+
+  // Enterprise triage insights (populated by AI orchestration pipeline)
+  category   EmailCategory? @default(UNCLASSIFIED)
+  priority   EmailPriority? @default(MEDIUM)
+  intent     String?
+  confidence Float?
+  summary    String?
+  triagedAt  DateTime?
+
+  toolCalls ToolCall[]
+  auditLogs AuditLog[]
+
+  @@index([from])
+  @@index([priority])
+  @@index([processingStatus])
+  @@index([priority, processingStatus])
+}
+
+model ToolCall {
+  id            String      @id @default(cuid())
+  emailId       String
+  toolName      ToolName
+  rationale     String
+  argumentsJson Json
+  createdAt     DateTime    @default(now())
+
+  // Secure HITL execution layer
+  riskLevel      RiskLevel      @default(LOW)
+  approvalStatus ApprovalStatus @default(PENDING)
+  approvedAt     DateTime?
+  rejectionReason String?
+
+  email      Email           @relation(fields: [emailId], references: [id])
+  execution  ToolExecution?
+  auditLogs  AuditLog[]
+
+  @@index([emailId])
+  @@index([approvalStatus])
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  emailId    String?
+  toolCallId String?
+  action     AuditAction
+  actor      String      @default("user")
+  details    Json?
+  createdAt  DateTime    @default(now())
+
+  email    Email?    @relation(fields: [emailId], references: [id], onDelete: Cascade)
+  toolCall ToolCall? @relation(fields: [toolCallId], references: [id], onDelete: Cascade)
+
+  @@index([emailId])
+  @@index([toolCallId])
+}
+
+model ToolExecution {
+  id                  String   @id @default(cuid())
+  toolCallId          String   @unique
+  executionResultJson Json
+  executedAt          DateTime @default(now())
+
+  toolCall ToolCall @relation(fields: [toolCallId], references: [id])
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum ToolName {
+  schedule_meeting
+  draft_response
+  escalate_to_manager
+  create_task
+  flag_urgent
+  archive_no_action
+}
+
+enum EmailCategory {
+  MEETING
+  URGENT
+  TASK
+  FOLLOW_UP
+  INFORMATIONAL
+  ESCALATION
+  NEWSLETTER
+  ACTION_REQUIRED
+  UNCLASSIFIED
+}
+
+enum EmailPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AuditAction {
+  TRIAGED
+  APPROVED
+  REJECTED
+  EXECUTED
+  EXECUTION_BLOCKED
+  RETRIED
+}

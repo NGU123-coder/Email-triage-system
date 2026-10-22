@@ -1,0 +1,15 @@
+node_modules
+dist
+.env
+.env.*
+!.env.example
+apps/backend/.env.example
+apps/frontend/.env.example
+*.sqlite
+coverage
+.vscode
+.DS_Store
+data/raw-enron/
+*.db
+apps/backend/uploads/
+!apps/backend/uploads/.gitkeep
